@@ -1,0 +1,195 @@
+\documentclass[12pt]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{lmodern}
+\usepackage[margin=0.7in]{geometry}
+\usepackage{authblk}
+\usepackage{setspace}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{float}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{biblatex}
+\usepackage[hidelinks]{hyperref}
+\usepackage{comment}
+\addbibresource{ref.bib}
+\setlength{\columnsep}{24pt} 
+\begin{comment}
+
+% ---- Column & line number spacing tweaks ----
+\setlength{\columnsep}{24pt}      % space between the two columns (default ~10pt)
+\usepackage[switch]{lineno}       % 'switch' puts line numbers on outer margins
+%\setlength\linenumbersep{8pt}     % gap between line numbers and text
+
+
+%%%%%% Bibliography %%%%%%
+% Replace "sample" in the \addbibresource line below with the name of your .bib file.
+\usepackage[
+  style=nejm, 
+  citestyle=numeric-comp,
+  sorting=none
+]{biblatex}
+
+
+\end{comment}
+\title{\large Scientific Modelling Computer Lab \huge\\[0.4ex] N-body simulations in cosmology\vspace{-0.5cm}}
+
+
+
+\author[1]{András Helyes\vspace{-0.65cm}}
+
+%%%%%% Affiliations %%%%%%
+\affil[1]{Physics MSc, Eötvös Loránd University, Budapest, Hungary.\vspace{-0.5cm}}
+
+%%%%%% Date %%%%%%
+% Date is optional
+\date{March 26, 2026\vspace{-0.4cm}}
+
+%%%%%% Spacing %%%%%%
+% For a proof-style two-column layout, a mild stretch often looks good.
+% You can change 1.15 to 1.0 for true single spacing, or back to \onehalfspacing.
+\setstretch{0.5}
+\linespread{1.15}
+\usepackage[english]{babel}
+
+\newcommand{\gad}{\texttt{GADGET-4}}
+\newcommand{\gads}{\texttt{GADGET-4} }
+\newcommand{\py}{\texttt{Python}}
+\newcommand{\pys}{\texttt{Python} }
+\newcommand{\dml}{\texttt{DM-L50-N128}}
+\newcommand{\dmls}{\texttt{DM-L50-N128} }
+\newcommand{\cpu}{\texttt{CPU}}
+\newcommand{\cpus}{\texttt{CPU} }
+
+\begin{document}
+\emergencystretch=2em
+\selectlanguage{english}
+\twocolumn[
+\begin{@twocolumnfalse}
+\vspace{-1.4cm}
+\maketitle
+
+%%%%%% Abstract (two-column) %%%%%%
+\begin{abstract}
+In the midterm report I am going to summarize my work on getting familiar with the basics of cosmological N-body simulations. I am going to briefly discuss their theoretical background and explain how I set up necessary tools on my computer and ran different simulations using \texttt{GADGET-4}. The first is a small example simulation about galaxy collision, but the second allowed me to study how the large scale structure of the universe developed, providing data for later work. I also discuss visualization possibilities of large datasets.
+\end{abstract}
+%\vspace{1em}
+\end{@twocolumnfalse}
+]
+
+
+%%%%%% Main Text %%%%%%
+
+\section{Introduction}
+Although nowadays the theoretical background of the evolution of universe seems to be more or less well-established, understanding and describing how can it be derived from the first principles of mechanics is still remaining a demanding task. Unequivocally, due to the extreme number of particles in the universe, we will never have an absolutely faithful simulation of the whole and therefore utilizing the latest technologies and working with advanced computer science tools is indispensable.
+
+One of the main questions that may be answered by N-body simulations is that how the originally homogeneous matter distribution of the early universe collapsed and formed the observable galaxies and clusters. Also, studying statistical properties like the power spectrum of developed matter configuration can be used to test cosmological models. The assumption behind all simulations is that if one considers a sufficiently large spatial region to do the calculations, then the statistical properties of the results will not be different from the statistics of the whole universe. As mentioned above, it is hopeless to respect the true structure of matter in these simulations so in all cases, only representative particles are used (for example a point mass-like object can itself represent a whole galaxy).
+
+The ancestors of current N-body simulations date back to the beginning of the nineteen-seventies. One of them was Jim Peebles' seminal work \cite{Peebles1970}, in which he investigated structure formation using only approximately 300 particles (which is an extremely low number, even compared to the smallest simulations nowadays). For comparison, the simulation corresponding to the famous work on the clustering of galaxies by Volker Springel in 2005 \cite{Springel2005Nature}, contained $\approx$ 10 billion particles in a cube-shaped region with 2230 billion light years on a side. This incredible simulation, also called as ``Millennium Run'' was performed using the \texttt{GADGET-2} code, whose further developed version (\texttt{GADGET-4}) is what I make use of during the semester to run my own simulations.
+
+\section{Theoretical background of power spectrum}
+One of the most important quantities that can be used to compare the large scale structure of the universe at different times is the matter power spectrum \cite{Dodelson2020ModernCosmology}. Basically it captures the density contrast of space and can be introduced in a straightforward way.
+First, the dimensionless relative matter density can be introduced as
+\begin{equation}
+    \delta(\vec{r})=\frac{\rho(\vec{r})-\overline{\rho}}{\overline{\rho}}
+\end{equation}
+where $\rho(\vec{r})$ is the matter density and $\overline{\rho}$ is its average over the entire space. Based on this, the so-called two-point correlation function $\xi(\vec{r})$ can be constructed, whose Fourier transform is interpreted as the $P(k)$ power spectrum.
+\begin{equation}\label{eq:2}
+\begin{split}
+    \xi(\vec{r})=\frac{1}{V}\int d^3\vec{x}\delta(\vec{x})\delta(\vec{x}-\vec{r})\\P(k)=\int d^3\vec{r}\xi(\vec{r})e^{-i\vec{k}\vec{r}}\;\;\;\;
+\end{split}
+\end{equation}
+
+Why power spectrum is particularly important is that it allows one to compare different states of the universe regardless the actual scale factor. Since working only with frequencies in the Fourier space, one obtains a way to study matter configuration without dealing with real spatial distances directly. As the definition \eqref{eq:2} indicates indirectly, power spectrum can be thought of as some kind of spread or variance of matter distribution. If there is an abundance of under- and overdense regions, it is going to be large, whereas small, if the distribution is homogeneous.
+
+There are different ways to study the power spectrum at different ages of the universe. For a redshift greater than $\approx$ 10, the linear perturbation theory of matter collapse holds and the power spectrum can be determined analytically as well. On the other hand, for later periods (including the today state of the universe), only N-body simulations can be used to theoretically compute it.
+
+\section{Overview of \texttt{GADGET-4}}
+\texttt{GADGET-4} is the most recently released version of the \texttt{GADGET} code, being available from 2021. The version tries to make use of the technological progress of the last few years in the field of computer science. Its most important improvements include better solutions associated with force accuracy and parallel scalability through a special \texttt{MPI}/shared-memory parallelization \cite{Springel2021Gadget4}.
+
+An important component of my work during the semester was to appropriately set up the program on my laptop, altogether with its dependencies. I would like to emphasise, that the installation of such program like \texttt{GADGET-4} is not a trivial task. First of all, it is practically available on Linux-based operating systems only, so my first task was to install \texttt{WSL} (Windows Subsystem for Linux) to my machine running Windows 11. Then I had to download the source codes of all the dependencies \texttt{GADGET-4}, namely certain versions of \texttt{OpenMPI}, \texttt{GSL}, \texttt{FFTW}, \texttt{HDF5} and \texttt{hwloc} \cite{masterdesky}.
+
+To install these, I needed to familiarize myself with the so-called ``\texttt{make} workflow'' used to build these programs from source code. The first step in each case was to configure the build process, with which I could tailor the build process to my system. As the second step, I made use of the so-called Makefiles generated in the previous step to proceed with the compilation of each source code (using the \texttt{make} command ensured, that all the necessary source files are compiled in the right order). The workflow ends with the installation itself.
+
+The installation of \texttt{GADGET-4} consisted of similar steps, but also required some additional attention. For example, I had to link the dependencies (which was a system specific task) and I adjusted compile-time options too. The latter step tunes the general behaviour of the program (like boundary condition and debug options). Of course, every time an other kind of simulation has to be run, this means that \texttt{GADGET-4} has to be recompiled.
+
+Finally, I would mention that I faced some issues following the steps described on Ref. \cite{masterdesky}, coming from minor differences between \texttt{WSL} and a truly Linux-based operating system. Overcoming these problems was the most important part of my progress.
+
+\section{Description of \texttt{G2-galaxy}}
+One of the biggest challenges of running cosmological simulations is to generate physically meaningful initial conditions. Although \texttt{GADGET-4} is capable of certain kinds of initial condition generation, for my first run, I downloaded an already prepared initial condition file, which can be used with the \texttt{G2-galaxy} simulation. Given the initial condition, the simulation shows how 2 galaxies collide, containing ordinary and dark matter, 60000 particles in total. It covers approximately 8 billion years of the evolution of the system \cite{masterdesky} and I created 80 snapshots.
+
+Using \texttt{OpenMPI} I could run the simulation in parallel, using the maximum number of available CPU cores on my machine (6). The process took approximately 10 minutes. After that, I made use of a Python code to read the snapshot files saved in \texttt{hdf5} format \cite{masterdesky}. In Figure \ref{fig1}, \ref{fig2} and \ref{fig3}, I plotted 3 snapshots' matter distributions during the collision process.
+\begin{figure} [H]
+    \centering
+    \includegraphics[width=0.85\linewidth]{coll0u.pdf}
+    \caption{Initial condition plotted on the x-y plane.}
+    \label{fig1}
+\end{figure}
+\begin{figure} [H]
+    \centering
+    \includegraphics[width=0.85\linewidth]{coll15u.pdf}
+    \caption{A middle state of the system, after the disks have started to merge.}
+    \label{fig2}
+\end{figure}
+\begin{figure} [H]
+    \centering
+    \includegraphics[width=0.85\linewidth]{coll8u.pdf}
+    \caption{The final states of the system, all the ordinary matter shares a single halo.}
+    \label{fig3}
+\end{figure}
+\section{Conclusion}
+In the last two weeks I got familiar with the basics on cosmological N-body simulations. I installed \texttt{GADGET-4}, a program designed for large scale astrophysical calculations. Furthermore, I also succeeded to perform my first many-body simulation, with which I could study the collision of 2 galaxies. To sum up, I am satisfied with the current progress.
+\section{Description of \\\texttt{DM-L50-N128}}
+One of my tasks was to choose a reasonable simulation that is feasible considering my computational resources and reasonable in the sense that it covers the whole evolution of the universe at some degree, so later during the semester the obtained simulation data can be used to evaluate large scale statistics. After comparing the available example simulations of \texttt{GADGET-4} I concluded that \dmls fits the above requirements. This simulation contains $128^3$, so more than 2 million dark matter particles and has a box size of 50 Mpc/h (more than $10^{14}$ times larger simulation volume, than in case of \texttt{G2-galaxy}). During the semester I will probably not be able to run any simulation significantly larger than this, since it ran for more than six hours.
+
+To create meaningful plots based on the results, I applied a versatile \texttt{Python} package called \texttt{Datashader}. It allows accurate and highly effective visualizations by breaking down the creation of images to a series of computations concerning intermediate representations of the data \cite{datashader_website}.
+
+The initial condition in this case was generated by the program itself at the beginning of the execution using second order Lagrangian perturbation theory (with a starting redshift of $z$=63 in this case) \cite{gadget4_examples}. I managed to save 3 snapshots at certain scale factor values, namely $a=0.25,\;0.5,\;1$. The corresponding plots can be seen in Figures \ref{fig4}., \ref{fig5}. and \ref{fig6}.
+
+\begin{figure} [H]
+    \centering
+    \includegraphics[width=0.9\linewidth]{data025n.pdf}
+    \caption{Matter distribution at scale factor 0.25, 2.14 Gyr after the big bang.}
+    \label{fig4}
+\end{figure}
+\begin{figure} [H]
+    \centering
+    \includegraphics[width=0.9\linewidth]{data050n.pdf}
+    \caption{Matter distribution at scale factor 0.5, 5.85 Gyr after the big bang.}
+    \label{fig5}
+\end{figure}
+\begin{figure} [H]
+    \centering
+    \includegraphics[width=0.9\linewidth]{data100n.pdf}
+    \caption{Matter distribution at scale factor 1, 13.8 Gyr after the big bang.}
+    \label{fig6}
+\end{figure}
+
+\section{Determination of non-linear power spectrum}
+During the second half of the semester I am planning to calculate the \eqref{eq:2} power spectrum corresponding to the data in Figure \ref{fig4}-\ref{fig6}. To have reference results, I evaluated the spectrum corresponding to the same cosmological parameters as of \dml, using the \texttt{CAMB} package of \texttt{Python} \cite{CAMBDocs}. The methods of this package rely on the results of certain former large scale simulations, which were highly accurate. Because of  this they are going to be suitable to study the errors of my own simulations. For $z=3,\;1,\;0$ ($a=0.25,\;0.5,\;1$), the calculated power spectra can be seen in Figure \ref{fig7}.
+
+\section{Conclusion}
+Until now, I got familiar with the basics on cosmological N-body simulations. I installed \texttt{GADGET-4}, a program designed for large scale astrophysical calculations. Furthermore, I also succeeded to perform my first many-body simulations.
+
+In the last two months I also dealt with the visualization of large astrophysical datasets and learnt the basics of using \texttt{CAMB} for power spectrum generation.
+
+I think I successfully established the work during the remaining part of the semester because now I can produce meaningful cosmological data that I am planning to analyse statistically. This way I will be able to test the predictive force of cosmological simulations. To sum up, I am satisfied with the current progress.
+
+\begin{figure} [H]
+    \centering
+    \includegraphics[width=0.99\linewidth]{powspec.pdf}
+    \caption{Matter power spectrum provided by \texttt{CAMB}.}
+    \label{fig7}
+\end{figure}
+
+
+\section*{Acknowledgement}
+For collecting information and references about the background of the field, I used ChatGPT (\url{https://chatgpt.com}).
+
+\pagebreak
+
+\printbibliography
+
+\end{document}
